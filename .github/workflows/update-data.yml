@@ -1,0 +1,51 @@
+name: update-data
+on:
+  schedule:
+    - cron: "*/30 13-21 * * 1-5"   # 미국 장중 30분마다(UTC)
+    - cron: "30 22 * * 1-5"         # 장 마감 후 하루 1회 전체 점검
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: 엔진 테스트(룩어헤드 점검 포함)
+        run: node tools/test_engine.js
+      - name: 시세 수집(접근 제한이면 우회 없이 중단, 이전 데이터 유지)
+        run: python tools/update_data.py || true
+      - name: 검증 재계산
+        run: node tools/backtest.js
+      - name: 개인정보 점검
+        run: python tools/privacy_check.py
+      - name: 데이터 커밋
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "data update" && git push || true
+      - name: 배포 파일 모으기
+        run: |
+          mkdir _site
+          cp -r index.html styles.css app.js engine.js sw.js manifest.webmanifest icon.svg data _site/
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: _site }
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: { name: github-pages, url: "${{ steps.d.outputs.page_url }}" }
+    steps:
+      - id: d
+        uses: actions/deploy-pages@v4
