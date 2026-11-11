@@ -1,0 +1,19 @@
+{
+  "note": "symbols 에 종목을 추가/삭제하세요. neutral:true 는 종목 선택 편향을 줄이기 위한 지수·섹터 ETF 검증 묶음입니다.",
+  "symbols": [
+    {"sym":"SPY","name":"S&P500","neutral":true},
+    {"sym":"QQQ","name":"나스닥100","neutral":true},
+    {"sym":"IWM","name":"러셀2000","neutral":true},
+    {"sym":"DIA","name":"다우존스","neutral":true},
+    {"sym":"XLK","name":"기술 섹터","neutral":true},
+    {"sym":"XLF","name":"금융 섹터","neutral":true},
+    {"sym":"XLE","name":"에너지 섹터","neutral":true},
+    {"sym":"XLV","name":"헬스케어 섹터","neutral":true},
+    {"sym":"XLY","name":"경기소비재 섹터","neutral":true},
+    {"sym":"XLP","name":"필수소비재 섹터","neutral":true},
+    {"sym":"XLI","name":"산업재 섹터","neutral":true},
+    {"sym":"SOXX","name":"반도체"},
+    {"sym":"EWY","name":"한국 ETF"}
+  ],
+  "context": [{"sym":"VIX","yf":"^VIX","name":"VIX"}]
+}
