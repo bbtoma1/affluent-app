@@ -1,0 +1,43 @@
+name: collect-subs
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: 채널 주소
+        default: https://www.youtube.com/@developmong
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install yt-dlp
+      - name: 자막 수집 (제한되면 5분 대기 후 이어받기, 우회 없음)
+        env:
+          CH: ${{ inputs.channel }}
+        run: python tools/collect_subs.py "$CH" subs
+      - name: 하나의 파일로 합치기
+        run: |
+          python - <<'PY'
+          import glob, json, os
+          n = 0
+          with open("all_subs.txt", "w", encoding="utf8") as out:
+              for j in sorted(glob.glob("subs/*.info.json")):
+                  vid = os.path.basename(j)[:-10]
+                  t = "subs/%s.txt" % vid
+                  if not os.path.exists(t):
+                      continue
+                  m = json.load(open(j, encoding="utf8"))
+                  out.write("### %s | %s | %s\n%s\n\n" % (vid, m.get("upload_date", ""), m.get("title", ""), open(t, encoding="utf8").read()))
+                  n += 1
+          print("영상", n)
+          if n == 0:
+              raise SystemExit("자막 0개: 유튜브가 요청을 막았을 수 있습니다. 우회하지 않고 중단합니다.")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: subs
+          path: all_subs.txt
+          retention-days: 7
